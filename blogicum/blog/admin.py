@@ -24,6 +24,7 @@ class LocationAdmin(admin.ModelAdmin):
     list_filter = ('is_published',)
     ordering = ('name',)
 
+
 class PostAdmin(admin.ModelAdmin):
     list_display = (
         'title',
