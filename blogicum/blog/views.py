@@ -1,51 +1,33 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404, render
-from django.db.models.functions import Now
+
 from .models import Category, Post
+
+POSTS_ON_INDEX: int = getattr(settings, 'POSTS_ON_INDEX', 5)
 
 
 def index(request):
-    posts = (
-        Post.objects
-        .select_related('author', 'category', 'location')
-        .filter(
-            is_published=True,
-            pub_date__lte=Now(),
-            category__is_published=True,
-        )
-        .order_by('-pub_date')[:5]
+    post_list = (
+        Post.objects.published().with_related()[:POSTS_ON_INDEX]
     )
-    context = {'post_list': posts}
-    return render(request, 'blog/index.html', context)
+    return render(request, 'blog/index.html', {'post_list': post_list})
 
 
 def category_posts(request, category_slug):
     category = get_object_or_404(
-        Category,
-        slug=category_slug,
-        is_published=True
+        Category, slug=category_slug, is_published=True
     )
-    posts = (
-        category.posts
-        .select_related('author', 'category', 'location')
-        .filter(
-            is_published=True,
-            pub_date__lte=Now(),
-        )
-        .order_by('-pub_date')
+    post_list = (
+        category.posts.published().with_related()
     )
-    context = {
-        'category': category,
-        'post_list': posts,
-    }
-    return render(request, 'blog/category.html', context)
+    return render(
+        request, 'blog/category.html',
+        {'category': category, 'post_list': post_list}
+    )
 
 
 def post_detail(request, id):
     post = get_object_or_404(
-        Post.objects.select_related('author', 'category', 'location'),
-        pk=id,
-        is_published=True,
-        pub_date__lte=Now(),
-        category__is_published=True,
+        Post.objects.published().with_related(), pk=id
     )
     return render(request, 'blog/detail.html', {'post': post})
